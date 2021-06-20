@@ -4,7 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const sqlite3 = require('sqlite3').verbose();
-
+const inserters = require('./inserters')
 
 
 const FEATURE_CONFIG_PATH = "featureConfig";
@@ -16,7 +16,6 @@ const FEATURE_ARGS = ['run',
   'yaafe',
   '-r', '16000',
   '--verbose',
-  '--dump-dataflow=df',
   '--resample',
   '-c', FEATURE_CONFIG_PATH,
   AUDIO_FILE_CONFIG_PATH];
@@ -27,7 +26,6 @@ const FRAMES_ARGS = ['run',
   'yaafe',
   '-r', '44100',
   '--verbose',
-  '--dump-dataflow=df',
   '--resample',
   "-f", "frames: Frames blockSize=1024 stepSize=1024",
   AUDIO_FILE_CONFIG_PATH];
@@ -74,6 +72,7 @@ function get_expected_csv_names(path, sound) {
 
     }
   }
+      arr.push(`${sound}.frames.csv`)
   return arr
 }
 function run_yaafe(args) {
@@ -180,27 +179,31 @@ async function parse_csv_file(file) {
   return [meta, data]
 }
 
-const dumpers = {
-  "Loudness": (meta, data, db) => {
 
-  }
-}
-
-async function add_file_to_db(file, table, db) {
+async function add_file_to_db(file, db) {
   const [meta, data] = await parse_csv_file(file)
-  db.serialize(function() {
     let metaobj = {}
     meta.forEach(v => metaobj[v[0]] = v[1])
     // const table=meta.find((v)=>v[0]==='yaafedefinition')[1].split(' ')[0]
     const table = metaobj.yaafedefinition
+
     // console.log(metaobj.blockSize)
     // console.log(metaobj.stepSize)
     // console.log(metaobj.samplerate)
+    metaobj.filename = path.basename(file)
+    if (table==='Loudness'){
+      await inserters['Loudness'](metaobj,data,db)
+    }
+    if (table==='Frames'){
+      await inserters['Frames'](metaobj,data,db)
+    }
+    if (table==='Chroma'){
+      await inserters['Chroma'](metaobj,data,db)
+    }
     // console.log(path.basename(file))
     // const json = JSON. stringify(Object.assign(data, { test: 'harm' }))
     // console.dir(json)
     // db.run(`INSERT INTO fileindex (filename, amplitudeModulation) VALUES("testyydasy", json('${json}'));`)
-  })
 }
 // run_yaafe().then(t=>console. log('done!'))
 
@@ -223,7 +226,7 @@ async function add_file_to_db(file, table, db) {
   const onsets = await getAubioOnsets()
   getFeatureKeys(files)
   for (let file of files) {
-    add_file_to_db(file, 'test', db)
+    await add_file_to_db(file,  db)
   }
   // console.log(files)
   // await add_file_to_db(files[0], db)
