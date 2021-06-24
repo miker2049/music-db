@@ -14,4 +14,3 @@ lpc: LPC LPCNbCoeffs=3 blockSize=1024  stepSize=512
 obsi: OBSI blockSize=1024  stepSize=512
 obsir: OBSIR blockSize=1024  stepSize=512
 am: AmplitudeModulation blockSize=30720 stepSize=15360
-onset: ComplexDomainOnsetDetection blockSize=1024  stepSize=512

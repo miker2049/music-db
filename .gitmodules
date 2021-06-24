@@ -1,0 +1,3 @@
+[submodule "Yaafe"]
+	path = Yaafe
+	url = https://github.com/Yaafe/Yaafe

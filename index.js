@@ -8,7 +8,7 @@ const inserters = require('./inserters')
 
 
 const FEATURE_CONFIG_PATH = "featureConfig";
-const AUDIO_FILE_CONFIG_PATH = "sounds/testcsus4.wav";
+const AUDIO_FILE_CONFIG_PATH = process.argv[2]
 const FEATURE_ARGS = ['run',
   '--rm=true',
   `--volume=${__dirname}:/wd`,
@@ -37,7 +37,6 @@ function getAubioOnsets() {
     const aubio_process = spawn('aubioonset', [AUDIO_FILE_CONFIG_PATH]);
 
     aubio_process.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
       onsets += data;
     });
 
@@ -46,7 +45,7 @@ function getAubioOnsets() {
     });
 
     aubio_process.on('close', (code) => {
-      console.log(`child process exited with code ${code}`);
+      console.log(`the aubio child process exited with code ${code}`);
       if (code > 0) {
         rej()
       } else {
@@ -80,7 +79,6 @@ function run_yaafe(args) {
     const yaafe_process = spawn('docker', args);
 
     yaafe_process.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
     });
 
     yaafe_process.stderr.on('data', (data) => {
@@ -88,7 +86,7 @@ function run_yaafe(args) {
     });
 
     yaafe_process.on('close', (code) => {
-      console.log(`child process exited with code ${code}`);
+      console.log(`the yaafe child process exited with code ${code}`);
       if (code > 0) {
         rej()
       } else {
@@ -186,50 +184,29 @@ async function add_file_to_db(file, db) {
     meta.forEach(v => metaobj[v[0]] = v[1])
     // const table=meta.find((v)=>v[0]==='yaafedefinition')[1].split(' ')[0]
     const table = metaobj.yaafedefinition
+    metaobj.filename = path.basename(AUDIO_FILE_CONFIG_PATH);
 
-    // console.log(metaobj.blockSize)
-    // console.log(metaobj.stepSize)
-    // console.log(metaobj.samplerate)
-    metaobj.filename = path.basename(file)
-    if (table==='Loudness'){
-      await inserters['Loudness'](metaobj,data,db)
+    if (inserters[table]){
+      await inserters[table](metaobj,data,db)
+    } else {
+      console.log('no table for ' + table)
     }
-    if (table==='Frames'){
-      await inserters['Frames'](metaobj,data,db)
-    }
-    if (table==='Chroma'){
-      await inserters['Chroma'](metaobj,data,db)
-    }
-    // console.log(path.basename(file))
-    // const json = JSON. stringify(Object.assign(data, { test: 'harm' }))
-    // console.dir(json)
-    // db.run(`INSERT INTO fileindex (filename, amplitudeModulation) VALUES("testyydasy", json('${json}'));`)
 }
 // run_yaafe().then(t=>console. log('done!'))
+//sald
 
-// db.serialize(function() {
-//   db.run("CREATE TABLE lorem (info TEXT)");
-
-//   const stmt = db.prepare("INSERT INTO lorem VALUES (?)");
-//   for (var i = 0; i < 10; i++) {
-//       stmt.run("Ipsum " + i);
-//   }
-//   stmt.finalize();
-
-//   db.each("SELECT rowid AS id, info FROM lorem", function(err, row) {
-//       console.log(row.id + ": " + row.info);
-//   });
-// });
 (async function() {
   const db = new sqlite3.Database('./DB.db', sqlite3.OPEN_READWRITE);
   const files = await create_csv_files().catch((err) => { console.log(err) })
-  const onsets = await getAubioOnsets()
+db.run('PRAGMA synchronous=OFF')
+db.run('PRAGMA count_changes=OFF')
+db.run('PRAGMA journal_mode=MEMORY')
+db.run('PRAGMA temp_store=MEMORY')
+  // const onsets = await getAubioOnsets()
   getFeatureKeys(files)
-  for (let file of files) {
-    await add_file_to_db(file,  db)
-  }
-  // console.log(files)
-  // await add_file_to_db(files[0], db)
+  await Promise.all(files.map((item, i, arr) => add_file_to_db(item,db)))
   db.close()
+  cleanCSV(files)
+  console.log('done!')
 })()
 // db.close();

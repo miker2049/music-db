@@ -82,16 +82,16 @@ CREATE TABLE IF NOT EXISTS "Chroma2" (
 "stepSize"	INTEGER,
 "rowNumber" INTEGER,
 "c"	REAL,
-"c#" REAL,
+"cs" REAL,
 "d" REAL,
-"d#" REAL,
+"ds" REAL,
 "e" REAL,
 "f" REAL,
-"f#" REAL,
+"fs" REAL,
 "g" REAL,
-"g#" REAL,
+"gs" REAL,
 "a" REAL,
-"a#" REAL,
+"ass" REAL,
 "b" REAL,
 PRIMARY KEY("id" AUTOINCREMENT)
 );
@@ -109,6 +109,19 @@ CREATE TABLE IF NOT EXISTS "LPC" (
 "LPCNbCoeffs0" REAL,
 "LPCNbCoeffs1" REAL,
 "LPCNbCoeffs2" REAL,
+PRIMARY KEY("id" AUTOINCREMENT)
+);
+
+CREATE TABLE IF NOT EXISTS "Chords" (
+"id"	INTEGER NOT NULL,
+"filename"	TEXT,
+"normalize"	INTEGER,
+"resample"	INTEGER,
+"samplerate"	INTEGER,
+"blockSize"	INTEGER,
+"stepSize"	INTEGER,
+"rowNumber" INTEGER,
+"chord" REAL,
 PRIMARY KEY("id" AUTOINCREMENT)
 );
 
