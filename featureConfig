@@ -1,7 +1,7 @@
 lx: Loudness blockSize=1024  stepSize=512
-chr: Chroma blockSize=1024  stepSize=512
-chr2: Chroma2 blockSize=1024  stepSize=512
-chords: Chords ChordsUse7=1 blockSize=1024 stepSize=512
+chr: Chroma stepSize=512
+chr2: Chroma2 stepSize=512
+chord: Chords ChordsUse7=1 stepSize=512
 psp: PerceptualSpread blockSize=1024  stepSize=512
 psh: PerceptualSharpness blockSize=1024  stepSize=512
 ss: SpectralSlope blockSize=1024  stepSize=512
@@ -14,3 +14,4 @@ lpc: LPC LPCNbCoeffs=3 blockSize=1024  stepSize=512
 obsi: OBSI blockSize=1024  stepSize=512
 obsir: OBSIR blockSize=1024  stepSize=512
 am: AmplitudeModulation blockSize=30720 stepSize=15360
+onset: ComplexDomainOnsetDetection blockSize=1024  stepSize=512
