@@ -1,73 +1,64 @@
-
-~secs=5;
-~rowsec= (44100/1024).floor;
-~totalSamples=~rowsec*~secs*1024;
-~totalrows=(~totalSamples/1024).ceil;
-(215*1024)/44100
-~bb = Buffer.alloc(s, ~totalSamples; );
-43*30
-
 (
-
-var query = "SELECT data FROM Frames where runID = 1 and ORDER BY rowNumber ASC LIMIT %".format();
-
-var command="sqlite3 DBv3.db \"%\"".format(query);
-~pipe = Pipe(command,"r");
-)
-~pipe.getLine;
-~test=~pipe.readUpTo($@)
-~test2=~pipe.readUpTo($@)
-~test.split($,).collect({|e|e.asFloat;}).size;
-~test2.split($,).collect({|e|e.asFloat;}).size;
-~test == ~test2;
-~test2.split($,).size;
-
-(
-~bb={ var countquery = "SELECT count(id) FROM Frames where runID = 1 and segment=7;";
+~bb={
+	|runID, segment, n|
+	var countquery = "SELECT count(id) FROM Frames where runID = % and segment between % and %;".format(runID, segment, segment+n);
+	var query = "SELECT quote(data) FROM Frames where runID = % and segment between % and % ORDER BY rowNumber ASC;".format(runID, segment, segment+n);
 	var count;
-	var query = "SELECT data FROM Frames where runID = 1 and segment=7 ORDER BY rowNumber ASC;".format(~totalrows);
-
-	var command="sqlite3 DBv3.db \"%\"".format(query);
+	var command="sqlite3 DBv2.db \"%\"".format(query);
 	var pipe = Pipe(command,"r");
-	// var pipe = Pipe(command,"r");
-	var l = pipe.readUpTo($@);
+	//to first X
+	var l = pipe.readUpTo($X);
 	var offset = 0;
 	var b;
-	count="sqlite3 DBv3.db \"%\"".format(countquery).unixCmdGetStdOut;
+	//through full frame
+	l = pipe.readUpTo($X);
+
+	count="sqlite3 DBv2.db \"%\"".format(countquery).unixCmdGetStdOut;
 	b=Buffer.alloc(s, count.asInteger*1024);
 	"before".postln;
+
 	while({l.notNil},{
-		b.setn((offset*1024),l.split($,).collect({|e| e.asFloat;}));
-		l = pipe.readUpTo($@);
+		var clumps;
+
+		l=l.tr($',$ );
+		l=l.stripWhiteSpace;
+		clumps =  l.clump(8).collectAs({ |clump|
+			//hexToInt here relies on big endian
+			Float.from32Bits(~hexToInt.value(clump));
+			// Float.from32Bits(clump.hexToInt);
+		}, FloatArray);
+		b.setn((offset*1024),clumps);
+		// b.setn((offset*1024),l.split($,).collect({|e| e.asFloat;}));
+		// l = pipe.readUpTo($@);
+		l = pipe.readUpTo($X);
+		// l.tr($',"");
 		offset = offset+1;
 	});
 	"done".postln;
-}.value;
+	b;
+}.value(15,22,1);
 )
-s.meter;
 ~bb.play;
-Synth(\default, [\amp, 1, \freq, 440]).free
+Synth(\default, [\amp, 1, \freq, 440])
+
 
 (
-var query = "SELECT quote(data) FROM Frames where rowNumber between 150 and 200 ORDER BY rowNumber ASC";
-var lines="sqlite3 DBv3.db \"%\"".format(query).unixCmdGetStdOut();
-var cl, fl;
-// var pipe = Pipe("sqlite3 DBv3.db \"%\"".format(query), "r");
-var splitlines=lines.split($X);
-var offset=0;
-splitlines.do({arg line, linei;
-	if( line.size>8, {
-		    "doing line %".format(linei).postln;
-			line.removeAt(0); // the apostrophe
-			line.clump(8).do({ arg word, i;
-				var fl;
-				word=word.replace("\n","");
-				fl=Float.from32Bits(word.hexToInt);
-				// fl.postln;
-				// ~bb.set(offset+i,fl);
-			});
-		});
-	offset = offset+1024;
-});
-"done".postln;
+~hexToInt= {
+	// assumes each character of string is a valid hex digit (0-9, A-F)
+	// doesn't handle negatives
+	|str|
+	var result = 0, i, size, digit;
+
+	str.do { |char|
+		digit = char.digit;
+		if(digit.notNil) {
+			result = (result << 4) | digit;
+		} {
+			"Invalid hex digit found at % in %".format(char, str).warn;
+			result = (result << 4);
+		};
+	};
+
+	result;
+}
 )

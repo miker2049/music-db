@@ -16,42 +16,41 @@ dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
 import sqlite3
 
-con = sqlite3.connect(sys.argv[2])
+con = sqlite3.connect(sys.argv[1])
 # enable extension loading
 con.enable_load_extension(True)
 # Load the fulltext search extension
 con.load_extension("lib/extension-functions")
 db = con.cursor()
 
-filename=sys.argv[1]
+filename=sys.argv[2]
 feats=scr.getFileFeatures(filename)
 frames=scr.getFrames(filename)
 segments=feats[2]
 
 db.execute(qs['meta'], (filename,
-                                json.dumps(feats[0]['lx']),
-                                json.dumps(feats[0]['chr']),
-                                json.dumps(feats[0]['chr2']),
-                                json.dumps(feats[0]['chord']),
-                                json.dumps(feats[0]['psp']),
-                                json.dumps(feats[0]['psh']),
-                                json.dumps(feats[0]['ss']),
-                                json.dumps(feats[0]['sv']),
-                                json.dumps(feats[0]['sd']),
-                                json.dumps(feats[0]['sf']),
-                                json.dumps(feats[0]['sss']),
-                                json.dumps(feats[0]['mfcc']),
-                                json.dumps(feats[0]['lpc']),
-                                json.dumps(feats[0]['obsi']),
-                                json.dumps(feats[0]['obsir']),
-                                json.dumps(feats[0]['am']),
-                                json.dumps(feats[0]['onset']),
-                                json.dumps(frames[0]['frame']),
-                                dt_string
-) )
+                        json.dumps(feats[0]['lx']),
+                        json.dumps(feats[0]['chr']),
+                        json.dumps(feats[0]['chr2']),
+                        json.dumps(feats[0]['chord']),
+                        json.dumps(feats[0]['psp']),
+                        json.dumps(feats[0]['psh']),
+                        json.dumps(feats[0]['ss']),
+                        json.dumps(feats[0]['sv']),
+                        json.dumps(feats[0]['sd']),
+                        json.dumps(feats[0]['sf']),
+                        json.dumps(feats[0]['sss']),
+                        json.dumps(feats[0]['mfcc']),
+                        json.dumps(feats[0]['lpc']),
+                        json.dumps(feats[0]['obsi']),
+                        json.dumps(feats[0]['obsir']),
+                        json.dumps(feats[0]['am']),
+                        json.dumps(feats[0]['onset']),
+                        json.dumps(frames[0]['frame']),
+                        dt_string
+                        ) )
 this_run_id=db.execute("Select id from ProcessingRunsMeta order by id desc limit 1;").fetchone()
 this_run_id=this_run_id[0]
-
 for key in feats[1].keys():
     # print(key)
     rate=feats[0][key]['sampleRate']
@@ -70,43 +69,16 @@ frames_step=frames[0]['frame']['sampleStep']
 total_rows=len(frames[1]['frame'])
 for index,row in enumerate(frames[1]['frame']):
     this_seg=scr.findInRange(segments, (index*frames_step)/frames_rate )
-    tx=np.array2string(row, threshold=frames_step+5, separator=",")+"@"
+    # tx=np.array2string(row, threshold=frames_step+5, separator=",")+"@"
+    pack=struct.pack(">%sf"%len(row),*row)
     # tx=row.tobytes()
-    tx = tx[1 : len(tx)-2] + "@"
+    # tx = tx[1 : len(tx)-2] + "@"
+    # tx=bytes(tx, "utf-8")
     per= math.ceil((index/total_rows)*100)
     print("frames {p}% done".format(p=per))
-    tup=tuple([this_run_id,this_seg,index,tx])
+    tup=tuple([this_run_id,this_seg,index,pack])
     # tup=tuple([this_run_id,0,index])+(row.tobytes(),)
     db.execute(qs['frame'],tup)
-
-
-
-
-# print(frametest[0][1])
-# print(frametest[0][2])
-# print(frametest[0][3])
-# print(struct.unpack('>1024f',frametest[0])[0])
-# meta=feats[0]
-# print(feats[0].keys())
-# for feature in meta.keys():
-#     print(meta[feature])
-# js=json.dumps({ 'hey': 20 })
-
-
-
-# this_run_id=cur.execute("Select id from ProcessingRunsMeta order by id desc limit 1;").fetchone()
-# this_run_id=this_run_id[0]
-# print(len( list(feats[1]['sf'])))
-# print(len( list(feats[1]['mfcc'])))
-# it=iter(scr.FeatureDataIterator(this_run_id,feats,feats[2]))
-
-# # print(next(it))
-# # print(next(it))
-# # print(next(it))
-# # print(next(it))
-# for val in it:
-#     # print(len(val))
-#     cur.execute(insert_feature_query,val)
 
 con.commit()
 con.close()
