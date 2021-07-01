@@ -30,11 +30,20 @@ def process( dff, engine, filepath):
     engine.reset()
     engine.load(dff)
     print('processing')
-    afp = yaafe.AudioFileProcessor()
-    print('get afp')
-    afp.processFile(engine, filepath)
-    print('processed afp')
-    engine.flush()
+    if type(filepath) is str:
+        afp = yaafe.AudioFileProcessor()
+        print('get afp')
+        afp.processFile(engine, filepath)
+        print('processed afp')
+        engine.flush()
+    else:
+        try:
+            print(filepath)
+            engine.writeInput('audio', filepath)
+            engine.process()
+        except Exception:
+            print('cant process audio')
+
     return (engine.getOutputs(), engine.readAllOutputs())
 
 
