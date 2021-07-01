@@ -1,64 +1,127 @@
+Buffer.freeAll(s)
+
+// def cosine_similarity(x, y):
+//     return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
+
+~db=DB("DBv2.db",s)
 (
-~bb={
-	|runID, segment, n|
-	var countquery = "SELECT count(id) FROM Frames where runID = % and segment between % and %;".format(runID, segment, segment+n);
-	var query = "SELECT quote(data) FROM Frames where runID = % and segment between % and % ORDER BY rowNumber ASC;".format(runID, segment, segment+n);
-	var count;
-	var command="sqlite3 DBv2.db \"%\"".format(query);
-	var pipe = Pipe(command,"r");
-	//to first X
-	var l = pipe.readUpTo($X);
-	var offset = 0;
-	var b;
-	//through full frame
-	l = pipe.readUpTo($X);
+~results=~db.queryFloats("SELECT load_extension('lib/extension-functions.so'); SELECT * from segmentavgs where (chrr=1.0) AND sff<0.1 ORDER BY sff LIMIT 100;" ,23,true);
 
-	count="sqlite3 DBv2.db \"%\"".format(countquery).unixCmdGetStdOut;
-	b=Buffer.alloc(s, count.asInteger*1024);
-	"before".postln;
-
-	while({l.notNil},{
-		var clumps;
-
-		l=l.tr($',$ );
-		l=l.stripWhiteSpace;
-		clumps =  l.clump(8).collectAs({ |clump|
-			//hexToInt here relies on big endian
-			Float.from32Bits(~hexToInt.value(clump));
-			// Float.from32Bits(clump.hexToInt);
-		}, FloatArray);
-		b.setn((offset*1024),clumps);
-		// b.setn((offset*1024),l.split($,).collect({|e| e.asFloat;}));
-		// l = pipe.readUpTo($@);
-		l = pipe.readUpTo($X);
-		// l.tr($',"");
-		offset = offset+1;
-	});
-	"done".postln;
-	b;
-}.value(15,22,1);
+~sort=~euclideanSort.value(~results);
+~buffs= ~sort.collect({arg e; var b=~db.getSegmentBuffer(e[0],e[1],1); b.bufnum})
 )
-~bb.play;
-Synth(\default, [\amp, 1, \freq, 440])
+
+~bb.play
 
 
 (
-~hexToInt= {
-	// assumes each character of string is a valid hex digit (0-9, A-F)
-	// doesn't handle negatives
-	|str|
-	var result = 0, i, size, digit;
+~euclideanSort={
+	|arr, baseI=0| //2d, with first and second elements runID and segment
 
-	str.do { |char|
-		digit = char.digit;
-		if(digit.notNil) {
-			result = (result << 4) | digit;
-		} {
-			"Invalid hex digit found at % in %".format(char, str).warn;
-			result = (result << 4);
-		};
-	};
-
-	result;
+	var output;
+	var rest, diffs, base;
+	output= Array.new(arr.size);
+	output.insert(0,arr[baseI]);
+	base=arr[baseI][2..arr.size-1];
+	diffs = arr.collect({
+		|e, i|
+		var dist =~cosineSim.value(base,e[2..e.size-1]);
+		[e[0],e[1],dist]
+	});
+	diffs.sort({|a,b| a[2]<b[2]});
 }
 )
+
+(
+~cosineSim={
+	|x,y|
+	((x*y).sum)/(((x*x).sum).sqrt*((y*y).sum).sqrt)
+}
+)
+
+
+Pdef.removeAll
+EDrums()
+~bb=(~db.getSegmentBuffer(4,7,1)).play
+~bb.play
+
+~eg=EGuitar(s)
+
+(
+Pbindef(\guit,
+	\type, \guitarEvent,
+	\guitar, ~eg,
+	\midinote, Place(#[ [60,60,55,67],[72,79] ],inf)-24,
+	\amp, 0.2,
+	\dur, 0.125/2
+).play
+)
+
+
+(
+Pbindef(\snare,
+	\instrument, \clap,
+	\amp, Pseq([0,0.4],inf),
+	\dur, Prand([0.25],inf)
+).play
+)
+
+(
+Pbindef(\kick,
+	\instrument, \kick3,
+	\amp, 0.8,
+	\dur, Prand([0.5],inf)
+).play;
+Pbindef(\play3,
+	\instrument, \dbplayer,
+	\amp,0.125,
+	\time, 0.5,
+	// \dur, Prand([0.25,0.125,0.5],inf),
+	\dur,0.125,
+	\rate,1,
+	// \rate, Pwalk(
+	// 	Array.fill(5,{ arg i; Scale.majorPentatonic.degreeToRatio(i,1) })
+	// 	),
+	\bufnum, Pwalk(~buffs, startPos:0),
+	// \viewer, Pfunc({|e|
+	// 	var plot;
+	// 	AppClock.sched(0.0,{
+	// 		var tt=e[\bufnum].postln;
+	// 		plot=Buffer.cachedBufferAt(s, tt).plot;
+	// 	});
+	// 	AppClock.sched(e[\time],{
+	// 		plot.parent.close;
+	// 	});
+	// })
+).play;
+)
+
+(
+Pdef(\snare).play;
+Pbindef(\play3, \bufnum, Pwalk(~buffs, startPos:70));
+)
+
+(
+Pdef(\snare).pause;
+Pdef(\kick).play;
+Pdef(\guit).play;
+Pbindef(\play3, \bufnum, Pwalk(~buffs, startPos:0));
+)
+
+(
+SynthDef(\dbplayer, { |out, bufnum, start, time, amp, rate = 1|
+	var sig = PlayBuf.ar(1, bufnum,
+		rate: rate * BufRateScale.kr(bufnum),
+		startPos: start, loop: 0
+	),
+	env = EnvGen.kr(Env.linen(0.06, time, 0.06, level: amp),
+		doneAction: Done.freeSelf);
+	sig = FreeVerb.ar(sig, 0.3, 0.9,0.6);
+	sig=Normalizer.ar(sig);
+	Out.ar(out, (sig * env).dup);
+}).add;
+)
+//if its >= 12, its minor,  24 dim, over 36 augmented, over 48 suspended,
+//over 60 is 7
+//and then the difference from that is the tonal center?
+//so, bsus should be 59
