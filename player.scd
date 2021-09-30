@@ -2,18 +2,9 @@ Buffer.freeAll(s)
 
 // def cosine_similarity(x, y):
 //     return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
-
-~db=DB("DBv2.db",s)
-(
-~results=~db.queryFloats("SELECT load_extension('lib/extension-functions.so'); SELECT * from segmentavgs where (chrr=1.0) AND sff<0.1 ORDER BY sff LIMIT 100;" ,23,true);
-
-~sort=~euclideanSort.value(~results);
-~buffs= ~sort.collect({arg e; var b=~db.getSegmentBuffer(e[0],e[1],1); b.bufnum})
-)
-
-~bb.play
-
-
+Server.supernova
+~db=DB("music -c",s, "psql -t -q -h 100.107.149.57 -p 6543 -U postgres --no-password")
+// ~db=DB("DBv2.db",s, "sqlite3")
 (
 ~euclideanSort={
 	|arr, baseI=0| //2d, with first and second elements runID and segment
@@ -29,23 +20,46 @@ Buffer.freeAll(s)
 		[e[0],e[1],dist]
 	});
 	diffs.sort({|a,b| a[2]<b[2]});
-}
-)
-
-(
+};
 ~cosineSim={
 	|x,y|
 	((x*y).sum)/(((x*x).sum).sqrt*((y*y).sum).sqrt)
+};
+// ~results=~db.queryFloats("SELECT load_extension('lib/extension-functions.so'); SELECT * from segmentavgs where (chrr=4.0) AND kurtosiss>0.4 AND pshh < 1 ORDER BY kurtosiss LIMIT 100 OFFSET 0;" ,23,true);
+fork {
+~results=~db.queryFloats(" SELECT * from segmentavgs where (chrr=3.0) AND kurtosiss>0.4 AND spreadd < 50 AND skewness < 4 ORDER BY spreadd LIMIT 50 OFFSET 0;" ,23,true);
+
+~sort=~euclideanSort.value(~results);
+~buffs= ~sort.collect({arg e; var b=~db.getSegmentBuffer(e[0],e[1],1); b.normalize; b.bufnum});
+~buffs.removeAllSuchThat({arg bb; Buffer.cachedBufferAt(s,bb).numFrames < 100})
+
 }
 )
+
+~buffs.removeAllSuchThat({arg bb; Buffer.cachedBufferAt(s,bb).numFrames < 100})
 
 
 Pdef.removeAll
 EDrums()
-~bb=(~db.getSegmentBuffer(4,7,1)).play
+~bb=(~db.getSegmentBuffer(1011,19,1)).play
+~tt= ~db.getSegmentBuffer(1010,7,1)
+~tt.plot;
+~tt.play;
+3.print;
 ~bb.play
 
 ~eg=EGuitar(s)
+~buffs[2]
+
+(
+fork {
+
+
+	~buffs.do({|bb| bb.postln; Synth(\dbplayer, [\out, 0, \bufnum, bb, \time, 2, \amp, 0.3]); 1.wait;})
+}
+)
+
+Buffer.cachedBufferAt(s, 83).numFrames > 0
 
 (
 Pbindef(\guit,
@@ -54,18 +68,18 @@ Pbindef(\guit,
 	\midinote, Place(#[ [60,60,55,67],[72,79] ],inf)-24,
 	\amp, 0.2,
 	\dur, 0.125/2
-).play
+).stop
 )
-
+s.meter
 
 (
 Pbindef(\snare,
 	\instrument, \clap,
 	\amp, Pseq([0,0.4],inf),
 	\dur, Prand([0.25],inf)
-).play
 )
-
+)
+~buffs.size
 (
 Pbindef(\kick,
 	\instrument, \kick3,
@@ -74,7 +88,7 @@ Pbindef(\kick,
 ).play;
 Pbindef(\play3,
 	\instrument, \dbplayer,
-	\amp,0.125,
+	\amp,0.25,
 	\time, 0.5,
 	// \dur, Prand([0.25,0.125,0.5],inf),
 	\dur,0.125,
@@ -82,12 +96,12 @@ Pbindef(\play3,
 	// \rate, Pwalk(
 	// 	Array.fill(5,{ arg i; Scale.majorPentatonic.degreeToRatio(i,1) })
 	// 	),
-	\bufnum, Pwalk(~buffs, startPos:0),
+	\bufnum, Pwalk(~buffs, [-1,1]),
 	// \viewer, Pfunc({|e|
 	// 	var plot;
 	// 	AppClock.sched(0.0,{
 	// 		var tt=e[\bufnum].postln;
-	// 		plot=Buffer.cachedBufferAt(s, tt).plot;
+	// 		plot=Buffer.cachedBufferAt(s, tt).plot("NOFOCUS");
 	// 	});
 	// 	AppClock.sched(e[\time],{
 	// 		plot.parent.close;
@@ -95,11 +109,17 @@ Pbindef(\play3,
 	// })
 ).play;
 )
+F
+s.prepareForRecord("sss.wav",2)
+s.record;
+s.stopRecording
 
 (
 Pdef(\snare).play;
-Pbindef(\play3, \bufnum, Pwalk(~buffs, startPos:70));
+Pbindef(\play3, \bufnum, Pwalk(~buffs, startPos:20));
 )
+
+Buffer.new(s,2).plot("NOFOCUS")
 
 (
 Pdef(\snare).pause;

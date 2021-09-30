@@ -1,0 +1,6 @@
+-- SELECT * from Chroma2 JOIN MFCC ON Chroma2.runID = MFCC.runID where Chroma2.runID = 32;
+SELECT Chords.segment, 
+median(chord),avg(c), avg(cs), avg(d), avg(ds),avg(e),
+avg(f),avg(fs),avg(g),avg(gs),avg(a),avg(ass),avg(b)
+from Chords,Chroma2 where Chroma2.segment=Chords.segment 
+and Chords.runID=30 GROUP by Chords.segment ORDER BY Chords.segment ASC;

@@ -35,6 +35,6 @@ with open(sys.argv[1]) as f:
     print(path)
     wavout=createWavRandomCrop(path)
     print(wavout)
-    runFeatures.main("DBv2_test.db",wavout)
+    runFeatures.main("DBv2.db",wavout)
     os.remove(wavout)
 # print(sys.argv[1])
