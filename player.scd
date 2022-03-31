@@ -3,8 +3,8 @@ Buffer.freeAll(s)
 // def cosine_similarity(x, y):
 //     return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
 Server.supernova
-~db=DB("music -c",s, "psql -t -q -h 100.107.149.57 -p 6543 -U postgres --no-password")
-// ~db=DB("DBv2.db",s, "sqlite3")
+~db=DB("music -c",s, "PGPASSWORD=postgres psql -t -q -h 100.98.141.12 -p 6543 -U postgres --no-password")
+~db=DB("db.db",s, "sqlite3")
 (
 ~euclideanSort={
 	|arr, baseI=0| //2d, with first and second elements runID and segment
@@ -37,12 +37,12 @@ fork {
 )
 
 ~buffs.removeAllSuchThat({arg bb; Buffer.cachedBufferAt(s,bb).numFrames < 100})
-
+"Hey'hey\'"
 
 Pdef.removeAll
 EDrums()
-~bb=(~db.getSegmentBuffer(1011,19,1)).play
-~tt= ~db.getSegmentBuffer(1010,7,1)
+~bb=(~db.getSegmentBuffer(1,102,1)).play
+~tt= ~db.getSegmentBuffer(1,102,1)
 ~tt.plot;
 ~tt.play;
 3.print;
@@ -90,13 +90,9 @@ Pbindef(\play3,
 	\instrument, \dbplayer,
 	\amp,0.25,
 	\time, 0.5,
-	// \dur, Prand([0.25,0.125,0.5],inf),
 	\dur,0.125,
 	\rate,1,
-	// \rate, Pwalk(
-	// 	Array.fill(5,{ arg i; Scale.majorPentatonic.degreeToRatio(i,1) })
-	// 	),
-	\bufnum, Pwalk(~buffs, [-1,1]),
+	\bufnum, Pwalk(~buffs, Pseq([1],inf), Pseq([1, -1], inf)),
 	// \viewer, Pfunc({|e|
 	// 	var plot;
 	// 	AppClock.sched(0.0,{
@@ -109,7 +105,7 @@ Pbindef(\play3,
 	// })
 ).play;
 )
-F
+
 s.prepareForRecord("sss.wav",2)
 s.record;
 s.stopRecording

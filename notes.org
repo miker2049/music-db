@@ -1,7 +1,0 @@
-#+TITLE: Notes for music db
-
-
-* resampling
-Most feature extraction things here are set to downsample to 16000 and take 1024 sample windows with 512 sample steps.
-
-To calculate from a given row number to sec: (rownumber*samplestep)/samplerate
