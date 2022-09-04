@@ -7,11 +7,7 @@ import os
 from pathlib import Path
 
 def createWavRandomCrop(filename):
-    print(filename)
     dur=ffmpeg.probe(filename)['streams'][0]['duration']
-    # dur=ffmpeg.probe(filename)
-
-    print(dur)
     dur=int(float( dur ))
     out, _ = (
         ffmpeg
@@ -30,11 +26,11 @@ with open(sys.argv[1]) as f:
 
     content = f.readlines()
     path= random.choice(content)
-    path="/home/mik/nextcloud/familyshare/mike_music_full/music/"+path
+    path=sys.argv[2]+path[2:]
     path=path.rstrip()
     print(path)
     wavout=createWavRandomCrop(path)
     print(wavout)
-    runFeatures.main("DBv2.db",wavout)
+    runFeatures.main(sys.argv[3],wavout)
     os.remove(wavout)
 # print(sys.argv[1])

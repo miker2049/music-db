@@ -1,6 +1,3 @@
-[submodule "Yaafe"]
-	path = Yaafe
-	url = https://github.com/Yaafe/Yaafe
 [submodule "sqlite3-extension-functions"]
 	path = sqlite3-extension-functions
 	url = https://github.com/codingforfun/sqlite3-extension-functions.git

@@ -1,7 +1,0 @@
-#! /bin/bash
-INSTALL_DIR=Yaafe/build/install
-export PATH=$PATH:$INSTALL_DIR/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_DIR/lib
-export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python3.10/site-packages
-echo $PYTHONPATH
-python $@
