@@ -57,22 +57,17 @@
             sha256 = "zZpBgVoPG0FF3j0S51xHQ/grvFVwZJrSyUl1dYrff1s="; # TODO
           };
         });
-        # pypika = (pkgs.python3Packages.buildPythonPackage rec {
-        #   pname = "pypika";
-        #   version = "0.48.9";
-        #   src = pkgs.fetchFromGitHub {
-        #     owner = "kayak";
-        #     repo = "pypika";
-        #     rev = "30574f997c80851f7e940ad09a63e14a98871dd3";
-        #     sha256 = "9HKT1xRu23F5ptiKhIgIR8srLIcpDzpowBNuYOhqMU0="; # TODO
-        #   };
-        # });
-        pypika = (mach-nix.lib.${system}.buildPythonPackage {
-
-          src = builtins.fetchGit {
-            url = "https://github.com/kayak/pypika";
+        pypika = (pkgs.python3Packages.buildPythonPackage rec  {
+          pname = "pypika";
+          version = "0.48.9";
+          propagatedBuildInputs = [
+            pkgs.python310Packages.parameterized
+          ];
+          src = pkgs.fetchFromGitHub {
+            owner = "kayak";
+            repo = "pypika";
             rev = "30574f997c80851f7e940ad09a63e14a98871dd3";
-            # rev = "put_commit_hash_here";
+            sha256 = "9HKT1xRu23F5ptiKhIgIR8srLIcpDzpowBNuYOhqMU0="; # TODO
           };
         });
       in rec {
