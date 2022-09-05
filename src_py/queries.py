@@ -55,3 +55,6 @@ OBSIR1,OBSIR2,OBSIR3,OBSIR4,OBSIR5,OBSIR6,OBSIR7,OBSIR8) VALUES (?,?,?,?,?,?,?,?
 AM1,AM2,AM3,AM4,AM5,AM6,AM7,AM8) VALUES (?,?,?,?,?,?,?,?,?,?,?);"
 
      }
+
+
+# def construct_segment_query()

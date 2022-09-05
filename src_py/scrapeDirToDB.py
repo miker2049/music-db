@@ -33,4 +33,5 @@ with open(sys.argv[1]) as f:
     print(wavout)
     runFeatures.main(sys.argv[3],wavout)
     os.remove(wavout)
+    print("DONK")
 # print(sys.argv[1])

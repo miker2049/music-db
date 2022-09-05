@@ -6,7 +6,8 @@ import statistics
 import yaafelib as yaafe
 import math
 import json
-
+from inspect import getsourcefile
+from os.path import dirname
 # this_filename="./sounds/julien_crop.wav"
 samplerate=16000
 frame_samplerate= 44100
@@ -97,7 +98,9 @@ def getFrames(filepath):
 
 def getFileFeatures(filepath):
     fp = yaafe.FeaturePlan( sample_rate=16000, resample=1)
-    fp.loadFeaturePlan("./featureConfig")
+    cwd = dirname(getsourcefile(lambda:0))
+    print(cwd)
+    fp.loadFeaturePlan(cwd+"/featureConfig")
     df=fp.getDataFlow()
     output=process( df, main_engine, filepath)
     onsetsData=output[1]['onset']

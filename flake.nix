@@ -57,12 +57,10 @@
             sha256 = "zZpBgVoPG0FF3j0S51xHQ/grvFVwZJrSyUl1dYrff1s="; # TODO
           };
         });
-        pypika = (pkgs.python3Packages.buildPythonPackage rec  {
+        pypika = (pkgs.python3Packages.buildPythonPackage rec {
           pname = "pypika";
           version = "0.48.9";
-          propagatedBuildInputs = [
-            pkgs.python310Packages.parameterized
-          ];
+          propagatedBuildInputs = [ pkgs.python310Packages.parameterized ];
           src = pkgs.fetchFromGitHub {
             owner = "kayak";
             repo = "pypika";
@@ -70,24 +68,36 @@
             sha256 = "9HKT1xRu23F5ptiKhIgIR8srLIcpDzpowBNuYOhqMU0="; # TODO
           };
         });
-      in rec {
-
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            pkgs.sqlite
-            pkgs.pyright
-            (pkgs.python310.withPackages (p:
-              with p; [
-                yaafe-py
-                python-supercollider
-                ffmpeg-python
-                numpy
-                scipy
-                tqdm
-                flask
-                pypika
-              ]))
-          ];
+        py = pkgs.python310.withPackages (p:
+          with p; [
+            yaafe-py
+            python-supercollider
+            ffmpeg-python
+            numpy
+            scipy
+            tqdm
+            flask
+            pypika
+          ]);
+        runtime = pkgs.stdenv.mkDerivation {
+          pname = "music-db-runtime";
+          version = "0.0.1";
+          buildInputs = [ pkgs.sqlite.dev ];
+          src = ./.;
+          installPhase = ''
+            mkdir -p $out/lib
+            cp -r $src/* $out/lib
+            gcc -fPIC -shared -o $out/lib/libsqlitefunctions.so $src/extension-functions.c -lm
+          '';
         };
+      in rec {
+        packages.server = pkgs.writeShellScriptBin "server" ''
+          ${py}/bin/python ${runtime}/lib/src_py/main.py
+        '';
+        packages.scrape = pkgs.writeShellScriptBin "scrape" ''
+          ${py}/bin/python ${runtime}/lib/src_py/scrapeDirToDB.py $@
+        '';
+        devShell =
+          pkgs.mkShell { buildInputs = [ pkgs.sqlite pkgs.pyright py ]; };
       });
 }

@@ -21,7 +21,7 @@ def main(dbpath,filepath):
     # enable extension loading
     con.enable_load_extension(True)
     # Load the fulltext search extension
-    con.load_extension("sqlite3-extension-functions/libsqlitefunctions")
+    con.load_extension("../libsqlitefunctions")
     db = con.cursor()
 
     filename=filepath
