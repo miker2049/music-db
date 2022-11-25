@@ -102,6 +102,7 @@ def getFileFeatures(filepath):
     print(cwd)
     fp.loadFeaturePlan(cwd+"/featureConfig")
     df=fp.getDataFlow()
+    main_engine.reset()
     output=process( df, main_engine, filepath)
     onsetsData=output[1]['onset']
     segments=getPeakSecs(onsetsData)

@@ -22,16 +22,17 @@ def createWavRandomCrop(filename):
 
 
 # print(result)
-with open(sys.argv[1]) as f:
-
-    content = f.readlines()
-    path= random.choice(content)
-    path=sys.argv[2]+path[2:]
-    path=path.rstrip()
-    print(path)
-    wavout=createWavRandomCrop(path)
-    print(wavout)
-    runFeatures.main(sys.argv[3],wavout)
-    os.remove(wavout)
-    print("DONK")
-# print(sys.argv[1])
+for i in range(int(sys.argv[1])):
+    with open(sys.argv[2]) as f:
+        content = f.readlines()
+        path= random.choice(content)
+        path=sys.argv[3]+path[2:]
+        path=path.rstrip()
+        print(path)
+        wavout=createWavRandomCrop(path)
+        # print(wavout)
+        print("DaNK")
+        runFeatures.main(sys.argv[4],wavout)
+        os.remove(wavout)
+        print("DONK")
+        # print(sys.argv[1])

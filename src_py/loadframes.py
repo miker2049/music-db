@@ -23,6 +23,10 @@ import numpy as np
 from tqdm import tqdm
 
 
+def get_run_frame_count(cur, run):
+    res = cur.execute( "SELECT count(id) FROM Frames where runID = ?", (run, ))
+    return res.fetchone()[0]
+
 def get_frame_count(cur, run, start, end ):
     res = cur.execute( "SELECT count(id) FROM Frames where runID = ? and segment between ? and ?;", (run, start, end))
     return res.fetchone()[0]
@@ -41,16 +45,46 @@ def db_to_wav(wavp, cur, run, start, end):
     res = cur.execute( "SELECT data FROM Frames where runID = ? and segment between ? and ? ORDER BY rowNumber ASC;", (run, start, end))
     fs = res.fetchall()
     count = len(fs)
+    print(count)
     wav = wave.open(wavp, "wb")
     wav.setnframes(count)
     wav.setnchannels(1)
     wav.setsampwidth(2)
     wav.setframerate(44100)
-    for l in tqdm(enumerate(fs)):
+    for l in enumerate(fs):
         baw = [ int( sample * 32767 ) for sample in struct.unpack( ">1024f", l[1][0]) ]
         wav.writeframesraw(struct.pack("<1024h", *baw))
 
+def db_to_wav_secs(wavp, cur, run, start, end):
+    frame_start = math.floor((start*44100)/1024)
+    frame_end = math.floor((end*44100)/1024)
+    print(frame_start, frame_end)
+    res = cur.execute( "SELECT data FROM Frames where runID = ? and rowNumber between ? and ? ORDER BY rowNumber ASC;", (run, frame_start, frame_end))
+    fs = res.fetchall()
+    count = len(fs)
+    print(frame_start, frame_end, count)
+    wav = wave.open(wavp, "wb")
+    wav.setnframes(count)
+    wav.setnchannels(1)
+    wav.setsampwidth(2)
+    wav.setframerate(44100)
+    for l in enumerate(fs):
+        baw = [ int( sample * 32767 ) for sample in struct.unpack( ">1024f", l[1][0]) ]
+        wav.writeframesraw(struct.pack("<1024h", *baw))
 
+def db_run_to_wav(wavp, cur, run):
+    res = cur.execute( "SELECT data FROM Frames where runID = ? ORDER BY rowNumber ASC;", (run, ))
+    fs = res.fetchall()
+    count = len(fs)
+    print(count)
+    wav = wave.open(wavp, "wb")
+    wav.setnframes(count)
+    wav.setnchannels(1)
+    wav.setsampwidth(2)
+    wav.setframerate(44100)
+    for l in enumerate(fs):
+        baw = [ int( sample * 32767 ) for sample in struct.unpack( ">1024f", l[1][0]) ]
+        wav.writeframesraw(struct.pack("<1024h", *baw))
 
 # db_to_wav("harf.wav", cur, 3, 0, 120)
 

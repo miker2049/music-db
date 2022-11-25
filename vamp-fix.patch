@@ -1,0 +1,24 @@
+From 0ff08d954105fe313f05b4112775644610e835c6 Mon Sep 17 00:00:00 2001
+From: Mike Russo <russomichaelb@gmail.com>
+Date: Thu, 24 Nov 2022 16:05:54 -0500
+Subject: [PATCH] Fix vamp plugin output
+
+---
+ src/examples/wscript | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/examples/wscript b/src/examples/wscript
+index f43ee94d..67c158bd 100644
+--- a/src/examples/wscript
++++ b/src/examples/wscript
+@@ -184,7 +184,7 @@ def build(ctx):
+         if sys.platform == 'darwin':
+             install_path = os.environ['HOME'] + '/Library/Audio/Plug-Ins/Vamp'
+         elif sys.platform.startswith('linux'):
+-            install_path = '/usr/local/lib/vamp'
++            install_path = '${PREFIX}/lib/vamp'
+         else:
+             install_path = None
+ 
+-- 
+2.38.1
